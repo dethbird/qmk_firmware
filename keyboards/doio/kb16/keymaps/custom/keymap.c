@@ -1,6 +1,6 @@
 /* Copyright 2022 DOIO
  * Copyright 2022 HorrorTroll <https://github.com/HorrorTroll>
- * Modified 2024 - Added Raw HID layer broadcasting
+ * Modified 2024 - Added Raw HID layer broadcasting + auto EEPROM clear
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -11,6 +11,7 @@
 #include QMK_KEYBOARD_H
 #include "raw_hid.h"
 #include "via.h"
+#include "eeprom.h"
 
 // OLED animation
 #include "lib/layer_status/layer_status.h"
@@ -18,6 +19,8 @@
 // Custom HID message types for macro browser communication
 #define MSG_LAYER_BROADCAST 0xAA
 #define MSG_LAYER_SWITCH    0xBB
+
+// EEPROM clear marker - change this value to trigger a new clear
 
 // Each layer gets a name for readability
 enum layer_names {
@@ -57,6 +60,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                 _______, RM_VALU, RM_HUED, RM_VALD
             ),
 };
+
+// Clear EEPROM on first boot with this firmware
+void keyboard_post_init_user(void) {
+    // Check if we've already cleared EEPROM with this firmware version
+    uint8_t marker = eeprom_read_byte((uint8_t*)EEPROM_MARKER_ADDR);
+    if (marker != EEPROM_CLEAR_MARKER) {
+        // Clear all EEPROM (this resets VIA settings, RGB, etc.)
+        eeconfig_init();
+        // Set our marker so we don't clear again on next boot
+        eeprom_write_byte((uint8_t*)EEPROM_MARKER_ADDR, EEPROM_CLEAR_MARKER);
+    }
+}
 
 // Broadcast layer change to host application via Raw HID
 layer_state_t layer_state_set_user(layer_state_t state) {

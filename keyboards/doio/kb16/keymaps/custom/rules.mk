@@ -1,3 +1,6 @@
 ENCODER_MAP_ENABLE = yes
 VIA_ENABLE = yes
 RAW_ENABLE = yes
+
+# Use PWM driver for WS2812
+WS2812_DRIVER = pwm
