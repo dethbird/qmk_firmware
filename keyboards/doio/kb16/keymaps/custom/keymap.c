@@ -6,18 +6,11 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include QMK_KEYBOARD_H
 #include "raw_hid.h"
+#include "via.h"
 
 // OLED animation
 #include "lib/layer_status/layer_status.h"
@@ -36,17 +29,6 @@ enum layer_names {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
-/*
-       ┌───┬───┬───┬───┐   ┌───┐ ┌───┐
-       │ 1 │ 2 │ 3 │ 4 │   │Ply│ │TO1│
-       ├───┼───┼───┼───┤   └───┘ └───┘
-       │ 5 │ 6 │ 7 │ 8 │
-       ├───┼───┼───┼───┤
-       │ 9 │ 0 │ ↑ │Ent│      ┌───┐
-       ├───┼───┼───┼───┤      │Mut│
-       │Fn2│ ← │ ↓ │ → │      └───┘
-       └───┴───┴───┴───┘
-*/
     [_BASE] = LAYOUT(
                 KC_1,     KC_2,    KC_3,    KC_4,     KC_MPLY,
                 KC_5,     KC_6,    KC_7,    KC_8,     TO(_FN),
@@ -86,14 +68,14 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     return state;
 }
 
-// Receive commands from host application
-void raw_hid_receive(uint8_t *data, uint8_t length) {
-    switch (data[0]) {
-        case MSG_LAYER_SWITCH:
-            // Switch to requested layer
-            layer_move(data[1]);
-            break;
+// Handle unhandled VIA commands - this is called for command IDs VIA doesn't recognize
+bool via_command_kb(uint8_t *data, uint8_t length) {
+    // Handle our custom layer switch command
+    if (data[0] == MSG_LAYER_SWITCH) {
+        layer_move(data[1]);
+        return true;  // We handled this command
     }
+    return false;  // Let VIA handle other commands
 }
 
 #ifdef OLED_ENABLE
