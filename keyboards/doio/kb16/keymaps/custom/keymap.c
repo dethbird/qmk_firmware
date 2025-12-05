@@ -51,7 +51,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
             ),
 
     [_FN2] = LAYOUT(
-                RM_SPDU, RM_SPDD, _______, QK_BOOT, _______,
+                RM_SPDU, RM_SPDD, EE_CLR,  QK_BOOT, _______,
                 RM_SATU, RM_SATD, _______, _______, TO(_BASE),
                 RM_TOGG, RM_NEXT, RM_HUEU, _______, _______,
                 _______, RM_VALU, RM_HUED, RM_VALD
