@@ -18,6 +18,8 @@
 // Custom HID message types for macro browser communication
 #define MSG_LAYER_BROADCAST 0xAA
 #define MSG_LAYER_SWITCH    0xBB
+#define MSG_KEYPRESS        0xCC
+#define MSG_KEYRELEASE      0xCD
 
 // Each layer gets a name for readability
 enum layer_names {
@@ -66,6 +68,18 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     data[1] = layer;
     raw_hid_send(data, 32);
     return state;
+}
+
+// Broadcast keypress and keyrelease events to host application via Raw HID
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+    uint8_t data[32] = {0};
+    data[0] = record->event.pressed ? MSG_KEYPRESS : MSG_KEYRELEASE;
+    data[1] = record->event.key.row;
+    data[2] = record->event.key.col;
+    data[3] = (keycode >> 8) & 0xFF;
+    data[4] = keycode & 0xFF;
+    raw_hid_send(data, 32);
+    return true;
 }
 
 // Handle unhandled VIA commands - this is called for command IDs VIA doesn't recognize
