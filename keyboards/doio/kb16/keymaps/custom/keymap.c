@@ -20,6 +20,8 @@
 #define MSG_LAYER_SWITCH    0xBB
 #define MSG_KEYPRESS        0xCC
 #define MSG_KEYRELEASE      0xCD
+#define MSG_ENCODER_CW      0xCE  // Encoder turned clockwise
+#define MSG_ENCODER_CCW     0xCF  // Encoder turned counter-clockwise
 
 // Each layer gets a name for readability
 enum layer_names {
@@ -80,6 +82,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     data[4] = keycode & 0xFF;
     raw_hid_send(data, 32);
     return true;
+}
+
+// Broadcast encoder rotation events to host application via Raw HID
+bool encoder_update_user(uint8_t index, bool clockwise) {
+    uint8_t data[32] = {0};
+    data[0] = clockwise ? MSG_ENCODER_CW : MSG_ENCODER_CCW;
+    data[1] = index;  // Which encoder (0, 1, or 2 for KB16's 3 encoders)
+    data[2] = get_highest_layer(layer_state);  // Include current layer for context
+    raw_hid_send(data, 32);
+    return true;  // Return true to allow encoder_map to still process the action
 }
 
 // Handle unhandled VIA commands - this is called for command IDs VIA doesn't recognize
