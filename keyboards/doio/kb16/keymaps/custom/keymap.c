@@ -22,6 +22,12 @@
 #define MSG_KEYRELEASE      0xCD
 #define MSG_ENCODER_CW      0xCE  // Encoder turned clockwise
 #define MSG_ENCODER_CCW     0xCF  // Encoder turned counter-clockwise
+// Host -> keyboard: perform a key combo (modifiers + key)
+// data[0] = MSG_KEY_COMBO
+// data[1] = mod bits: bit0=Ctrl, bit1=Shift, bit2=Alt, bit3=GUI
+// data[2] = keycode high byte (QMK keycode)
+// data[3] = keycode low byte
+#define MSG_KEY_COMBO       0xDE
 
 // Each layer gets a name for readability
 enum layer_names {
@@ -101,6 +107,35 @@ bool via_command_kb(uint8_t *data, uint8_t length) {
         layer_move(data[1]);
         return true;  // We handled this command
     }
+
+    // Handle host-requested key combo (e.g. Alt+Tab) sent over Raw HID
+    // Expecting: data[0] = MSG_KEY_COMBO, data[1] = mods bits, data[2..3] = keycode (high, low)
+    if (data[0] == MSG_KEY_COMBO && length >= 4) {
+        uint8_t mods = data[1];
+        uint16_t keycode = ((uint16_t)data[2] << 8) | data[3];
+
+        // Register modifiers as requested
+        if (mods & 0x01) register_code(KC_LCTL);
+        if (mods & 0x02) register_code(KC_LSFT);
+        if (mods & 0x04) register_code(KC_LALT);
+        if (mods & 0x08) register_code(KC_LGUI);
+
+        wait_ms(10);
+
+        // Send the requested key
+        tap_code16(keycode);
+
+        wait_ms(10);
+
+        // Unregister modifiers in reverse order
+        if (mods & 0x08) unregister_code(KC_LGUI);
+        if (mods & 0x04) unregister_code(KC_LALT);
+        if (mods & 0x02) unregister_code(KC_LSFT);
+        if (mods & 0x01) unregister_code(KC_LCTL);
+
+        return true;
+    }
+
     return false;  // Let VIA handle other commands
 }
 
